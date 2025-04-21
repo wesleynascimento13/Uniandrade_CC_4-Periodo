@@ -2,5 +2,8 @@
     "files.associations": {
         "menu.h": "c",
         "stdlib.h": "c"
-    }
+    },
+    "python.analysis.extraPaths": [
+        "./python/personagemgame/lib"
+    ]
 }
