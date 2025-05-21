@@ -38,16 +38,14 @@ class Personagem:
 
 class Pocao:
     def __init__(self, tipo, potencia):
-        self.tipo = tipo  # "cura" ou "veneno"
+        self.tipo = tipo
         self.potencia = potencia
 
-# ========== INÍCIO ==========
 p1 = Personagem("Chaves")
 pocao_verde = Pocao("cura", 20)
 pocao_roxa = Pocao("veneno", 30)
 
 while p1.vivo:
-    p1.mostrar_vida()
     print("\nEscolha uma poção:")
     print("1 - Poção Verde (+20)")
     print("2 - Poção Roxa (-30)")
@@ -62,6 +60,6 @@ while p1.vivo:
     else:
         print("Opção inválida!")
 
-    time.sleep(1.5)
+    time.sleep(0.5)
 
 print("\nFim do jogo.")
