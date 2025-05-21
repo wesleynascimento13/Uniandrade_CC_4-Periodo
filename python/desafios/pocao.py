@@ -40,7 +40,8 @@ class Pocao:
     def __init__(self, tipo, potencia):
         self.tipo = tipo
         self.potencia = potencia
-
+        
+# ========== INÍCIO ==========
 p1 = Personagem("Chaves")
 pocao_verde = Pocao("cura", 20)
 pocao_roxa = Pocao("veneno", 30)
