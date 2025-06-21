@@ -12,7 +12,7 @@ class Jogador(ABC):
 
     @saude.setter
     def saude(self, valor):
-        self.__saude = max(0, self.__saude + valor)
+        self.__saude = max(0, min(100, self.__saude + valor))
 
     @abstractmethod
     def atacar(self):

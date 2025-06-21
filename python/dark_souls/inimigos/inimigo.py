@@ -1,8 +1,8 @@
 class Inimigo:
-    def __init__(self, nome: str, dano: int):
+    def __init__(self, nome: str, dano: int, saude: int):
         self.nome = nome
         self.dano = dano
-        self.__saude = 400
+        self.__saude = saude
 
     @property
     def saude(self):
