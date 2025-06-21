@@ -1,159 +1,197 @@
+import random
+from random import sample
 from jogadores.cavaleiro import Cavaleiro
 from itens.pocao import Pocao
 from inimigos.chefe import Chefe
 from inimigos.morto_vivo import MortoVivo
-import random
-from random import sample
 
-def barra_de_vida(valor_atual, valor_maximo, largura=20, cor=''):
-    proporcao = valor_atual / valor_maximo
+# ── util ──────────────────────────────────────────────────────────────────
+def barra_de_vida(valor_atual, valor_maximo, largura: int = 20, *, cor: str = ''):
+    proporcao  = max(0, valor_atual) / valor_maximo
     preenchido = int(proporcao * largura)
-    vazio = largura - preenchido
-    barra = '█' * preenchido + '░' * vazio
+    vazio      = largura - preenchido
+    barra      = '█' * preenchido + '░' * vazio
     return f"{cor}[{barra}] {valor_atual}/{valor_maximo}\033[0m"
 
+# ── inimigos ──────────────────────────────────────────────────────────────
 def escolher_inimigo():
     print("\n--- ESCOLHA SEU DESAFIO ---")
     print("1. Chefe: Senhor das Cinzas")
-    print("2. Morto-Vivo (inimigo aleatório)")
-    escolha = input("Digite o número do inimigo: ")
+    print("2. Morto-Vivo (aleatório)")
+    op = input("Número do inimigo: ")
 
-    if escolha == "1":
-        inimigo = Chefe("Senhor das Cinzas", 30)
-        vida_maxima = 200
-    elif escolha == "2":
-        mortos_vivos = [
-            {
-                "nome": "Esqueleto Sombrio",
-                "dano": 25,
-                "saude": 120,
-                "ataques": [
-                    {"nome": "Mordida Enferrujada", "bonus": 5},
-                    {"nome": "Arranhão Maldito", "bonus": 10},
-                    {"nome": "Grito Espectral", "bonus": 0}
-                ]
-            },
-            {
-                "nome": "Carniçal Rastejante",
-                "dano": 20,
-                "saude": 110,
-                "ataques": [
-                    {"nome": "Investida Podre", "bonus": 15},
-                    {"nome": "Lambida Tóxica", "bonus": 5},
-                    {"nome": "Esfarrapar", "bonus": 10}
-                ]
-            },
-            {
-                "nome": "Zumbi Selvagem",
-                "dano": 30,
-                "saude": 100,
-                "ataques": [
-                    {"nome": "Cabeçada Podre", "bonus": 0},
-                    {"nome": "Mordida Fúria", "bonus": 10},
-                    {"nome": "Empurrão Descontrolado", "bonus": 5}
-                ]
-            },
-            {
-                "nome": "Sombra Cadavérica",
-                "dano": 22,
-                "saude": 130,
-                "ataques": [
-                    {"nome": "Garras Etéreas", "bonus": 8},
-                    {"nome": "Sopro do Túmulo", "bonus": 4},
-                    {"nome": "Toque Gélido", "bonus": 6}
-                ]
-            }
-        ]
-        selecionado = random.choice(mortos_vivos)
-        inimigo = MortoVivo(
-            nome=selecionado["nome"],
-            dano=selecionado["dano"],
-            saude=selecionado["saude"],
-            ataques=selecionado["ataques"]
-        )
-        vida_maxima = selecionado["saude"]
-    else:
-        print("Opção inválida. Iniciando contra o Chefe por padrão.")
-        inimigo = Chefe("Senhor das Cinzas", 30)
-        vida_maxima = 200
+    if op == "1":
+        return Chefe("Senhor das Cinzas", 30), 200
 
-    return inimigo, vida_maxima
-
-def main():
-    cavaleiro = Cavaleiro("Rei Artur", 20)
-    inimigo, vida_inimigo_max = escolher_inimigo()
-    cavaleiro.especial = 0
-
-    possiveis_pocoes = [
-        Pocao("Poção Fraca", 20, 2),
-        Pocao("Poção Média", 40, 1),
-        Pocao("Poção Forte", 60, 1),
-        Pocao("Poção Vital", 80, 1),
-        Pocao("Poção Suprema", 100, 1)
+    vivos = [
+        ("Esqueleto Sombrio", 25, 120,
+         [{"nome":"Mordida Enferrujada","bonus":5},
+          {"nome":"Arranhão Maldito",  "bonus":10},
+          {"nome":"Grito Espectral",   "bonus":0}]),
+        ("Carniçal Rastejante", 20, 110,
+         [{"nome":"Investida Podre","bonus":15},
+          {"nome":"Lambida Tóxica","bonus":5},
+          {"nome":"Esfarrapar",    "bonus":10}]),
+        ("Zumbi Selvagem", 30, 100,
+         [{"nome":"Cabeçada Podre","bonus":0},
+          {"nome":"Mordida Fúria","bonus":10},
+          {"nome":"Empurrão",     "bonus":5}]),
+        ("Sombra Cadavérica", 22, 130,
+         [{"nome":"Garras Etéreas","bonus":8},
+          {"nome":"Sopro do Túmulo","bonus":4},
+          {"nome":"Toque Gélido",  "bonus":6}]),
     ]
+    nome, dano, vida, ataques = random.choice(vivos)
+    return MortoVivo(nome, dano, vida, ataques), vida
 
-    inventario = sample(possiveis_pocoes, k=3)
+# ── inventário e serviços ────────────────────────────────────────────────
+def consultar_inv(inv, cav=None):
+    print("\n--- INVENTÁRIO ---")
+    if not inv:
+        print("Vazio.")
+    else:
+        for i, p in enumerate(inv, 1):
+            print(f"{i}. {p.nome} (+{p.cura}) – qtd {p.quantidade}")
+    if cav is None:
+        input("Enter para voltar…")
+        return
 
+    esc = input("Número da poção para usar ou Enter p/ voltar: ")
+    if not esc.isdigit():
+        return
+    idx = int(esc) - 1
+    if 0 <= idx < len(inv):
+        inv[idx].usar(cav)
+        if inv[idx].quantidade == 0:
+            inv.pop(idx)
+    else:
+        print("Opção inválida.")
+
+def comprar_pocoes(cav, inv):
+    print("\n--- LOJA DE POÇÕES ---")
+    opcoes = [("Poção Fraca", 20, 10),
+              ("Poção Média", 40, 20),
+              ("Poção Forte", 60, 30)]
+    for i,(n,cura,preco) in enumerate(opcoes,1):
+        print(f"{i}. {n} (+{cura}) – {preco} G")
+    esc = input("Número ou Enter p/ voltar: ")
+    if not esc.isdigit(): return
+    idx = int(esc)-1
+    if 0<=idx<len(opcoes):
+        nome,cura,preco = opcoes[idx]
+        if cav.gold < preco:
+            print("Gold insuficiente.")
+            return
+        cav.gold -= preco
+        inv.append(Pocao(nome,cura,1))
+        print(f"Comprada {nome}.")
+    else:
+        print("Opção inválida.")
+
+def ferreiro(cav):
+    preco=50
+    if cav.gold < preco:
+        print("Gold insuficiente.")
+        return
+    cav.gold -= preco
+    cav.dano += 10
+    print("Arma aprimorada! +10 dano.")
+
+def estalagem(cav):
+    preco=30
+    if cav.gold < preco:
+        print("Gold insuficiente para dormir.")
+        return
+    cav.gold -= preco
+    cav.saude = 100
+    cav.especial = 0
+    print("Você dormiu e se recuperou totalmente!")
+
+# ── menus ────────────────────────────────────────────────────────────────
+def menu_inicial(cav, inv):
     while True:
-        print()
-        print(f"Vida de {inimigo.nome}: ", barra_de_vida(inimigo.saude, vida_inimigo_max, cor='\033[91m'))
-        print("Vida do Cavaleiro:", barra_de_vida(cavaleiro.saude, 100, cor='\033[92m'))
-        print("Especial:         ", barra_de_vida(cavaleiro.especial, 100, cor='\033[96m'))
-        print("--- MENU ---")
-        print("1. Atacar Inimigo")
-        print("2. Defender")
-        print("3. Inventário")
-        print("4. Sair")
-        if cavaleiro.especial >= 100:
-            print("5. ATAQUE ESPECIAL DISPONÍVEL")
+        print("\n"+"-"*42)
+        print("Vida :", barra_de_vida(cav.saude,100,cor='\033[92m'))
+        print("Esp  :", barra_de_vida(cav.especial,100,cor='\033[96m'))
+        print(f"Gold : {cav.gold} G")
+        print("-"*42)
+        print("1. Iniciar batalha")
+        print("2. Loja de poções")
+        print("3. Ferreiro (+10 dano - 50G)")
+        print("4. Estalagem (curar 30G)")
+        print("5. Inventário")
+        print("6. Sair")
+        op = input("Escolha: ")
 
-        opcao = input("Escolha uma opção: ")
+        if op=="1": return True
+        if op=="2": comprar_pocoes(cav,inv)
+        elif op=="3": ferreiro(cav)
+        elif op=="4": estalagem(cav)
+        elif op=="5": consultar_inv(inv)
+        elif op=="6": return False
+        else: print("Inválido.")
 
-        if opcao == "1":
-            cavaleiro.atacar()
-            inimigo.saude = -cavaleiro.dano
-            cavaleiro.especial = min(100, cavaleiro.especial + 20)
-            if inimigo.saude > 0:
-                dano = inimigo.atacar()
-                cavaleiro.saude = -dano
-        elif opcao == "2":
-            cavaleiro.defender()
-            if hasattr(inimigo, 'prever_ataque'):
+def batalha(cav, inv):
+    inimigo, vida_max = escolher_inimigo()
+    cav.especial = 0
+    while True:
+        print("\n"+"-"*42)
+        print(f"{inimigo.nome:18}:",
+              barra_de_vida(inimigo.saude,vida_max,cor='\033[91m'))
+        print("Cavaleiro :", barra_de_vida(cav.saude,100,cor='\033[92m'))
+        print("Especial  :", barra_de_vida(cav.especial,100,cor='\033[96m'))
+        print("-"*42)
+        print("1. Atacar  2. Defender  3. Inventário  4. Sair")
+        if cav.especial>=100:
+            print("5. ATAQUE ESPECIAL")
+        op=input("Ação: ")
+
+        if op=="1":
+            cav.atacar()
+            inimigo.saude = -cav.dano            # lógica solicitada
+            cav.especial = min(100,cav.especial+20)
+            if inimigo.saude>0:
+                cav.saude = -inimigo.atacar()
+        elif op=="2":
+            cav.defender()
+            if hasattr(inimigo,"prever_ataque"):
                 inimigo.prever_ataque()
-            else:
-                print(f"{inimigo.nome} parece preparar um ataque maligno...")
-        elif opcao == "3":
-            print("\n--- INVENTÁRIO DE POÇÕES ---")
-            for i, pocao in enumerate(inventario):
-                print(f"{i + 1}. {pocao.nome} (+{pocao.cura}) - Quantidade: {pocao.quantidade}")
-            escolha = input("Digite o número da poção para usar ou Enter para cancelar: ")
-            if escolha.isdigit():
-                idx = int(escolha) - 1
-                if 0 <= idx < len(inventario):
-                    inventario[idx].usar(cavaleiro)
-                    if inventario[idx].quantidade == 0:
-                        inventario.pop(idx)
-                else:
-                    print("Opção inválida.")
-        elif opcao == "4":
-            print("Saindo do jogo...")
-            break
-        elif opcao == "5" and cavaleiro.especial >= 100:
-            print("ATAQUE ESPECIAL ATIVADO!")
-            inimigo.saude = -cavaleiro.dano * 2
-            cavaleiro.especial = 0
-            if inimigo.saude > 0:
-                dano = inimigo.atacar()
-                cavaleiro.saude = -dano
+        elif op=="3":
+            consultar_inv(inv,cav)
+            continue
+        elif op=="4":
+            print("Você fugiu!")
+            return
+        elif op=="5" and cav.especial>=100:
+            print("ATAQUE ESPECIAL!")
+            inimigo.saude = -cav.dano*2          # mesma lógica
+            cav.especial = 0
+            if inimigo.saude>0:
+                cav.saude = -inimigo.atacar()
         else:
-            print("Opção inválida.")
+            print("Inválido."); continue
 
-        if cavaleiro.saude <= 0:
-            print("Você foi derrotado!")
-            break
-        if inimigo.saude <= 0:
-            print(f"Você venceu {inimigo.nome}!")
+        if cav.saude<=0:
+            print("Derrota…"); return
+        if inimigo.saude<=0:
+            print(f"Vitória sobre {inimigo.nome}! +50G")
+            cav.gold += 50
+            return
+
+# ── principal ────────────────────────────────────────────────────────────
+def main():
+    player = Cavaleiro("Rei Artur",20)
+    global inventario
+    inventario = sample([
+        Pocao("Poção Fraca",20,1),
+        Pocao("Poção Média",40,1),
+        Pocao("Poção Forte",60,1)
+    ],k=3)
+
+    while menu_inicial(player,inventario):
+        batalha(player,inventario)
+        if player.saude<=0:
             break
 
-if __name__ == '__main__':
+if __name__=="__main__":
     main()
